@@ -25,12 +25,21 @@ namespace :whenever do
     setup_whenever_task(fetch(:whenever_clear_flags))
   end
 
-  after "deploy:updated",  "whenever:update_crontab"
-  after "deploy:reverted", "whenever:update_crontab"
+  task :add_default_hooks do
+    after "deploy:updated",  "whenever:update_crontab"
+    after "deploy:reverted", "whenever:update_crontab"
+  end
+end
+
+namespace :deploy do
+  before :starting, :check_whenever_hooks do
+    invoke 'whenever:add_default_hooks' if fetch(:whenever_default_hooks)
+  end
 end
 
 namespace :load do
   task :defaults do
+    set :whenever_default_hooks, -> { true }
     set :whenever_roles,        ->{ :db }
     set :whenever_command,      ->{ [:bundle, :exec, :whenever] }
     set :whenever_command_environment_variables, ->{ {} }
